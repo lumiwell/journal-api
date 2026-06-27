@@ -1,1 +1,1 @@
-# insight-journal-api
+# journal-api

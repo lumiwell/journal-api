@@ -1,4 +1,4 @@
-# Pyrefly Configuration for Insight Journal API
+# Pyrefly Configuration for Journal API
 
 python_interpreter = ".venv/bin/python"
 
