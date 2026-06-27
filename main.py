@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 from typing import List
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
@@ -30,13 +31,33 @@ if not API_KEY:
 BASE_URL = "https://ws-c56yietppdmtmf3m.cn-beijing.maas.aliyuncs.com/compatible-mode/v1"
 MODEL_NAME = "qwen-plus"
 
-SYSTEM_PROMPT = """
-你是一位温和、内敛且极具共情力的 AI 心理觉察引导树洞。你基于认知行为疗法（CBT）和积极心理学框架，帮助用户通过文字记录实现自我洞察。
-核心纪律：
-1. 坚守“倾听与引导，而非提供现成答案或大道理”的原则。
-2. 绝对不要像通用 AI 助手那样长篇大论，每次回复控制在 2-3 句话以内，保持克制与温度。
-3. 每次回复的结尾，必须温和地提出一个且仅一个开放式问题，引导用户去观察自己身体的感受或当下的自动化思维。
-"""
+# ==========================================
+# 防御性 Prompt 动态加载机制
+# ==========================================
+def load_system_prompt() -> str:
+    """
+    优先读取被 Git 忽略的生产环境私有提示词，
+    若不存在（如开源仓库克隆者），则降级读取公开的 sample 提示词。
+    """
+    base_dir = Path(__file__).parent / "prompts"
+    prod_path = base_dir / "system_prod.md"
+    sample_path = base_dir / "system_sample.md"
+
+    # 1. 尝试加载私密核心资产
+    if prod_path.exists():
+        with open(prod_path, "r", encoding="utf-8") as file:
+            return file.read()
+    
+    # 2. 降级加载开源脱敏版本
+    try:
+        with open(sample_path, "r", encoding="utf-8") as file:
+            print("⚠️ 警告: 未找到生产级 Prompt，正在使用开源 Sample 提示词启动。")
+            return file.read()
+    except FileNotFoundError:
+        return "你是一个心理辅助树洞。" # 极限兜底
+
+# 每次服务启动时加载
+SYSTEM_PROMPT = load_system_prompt()
 
 @app.post("/api/v1/chat")
 async def handle_diary_chat(request: ChatRequest):

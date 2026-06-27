@@ -216,3 +216,7 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+
+# 忽略所有生产级私有提示词
+prompts/*_prod.md
